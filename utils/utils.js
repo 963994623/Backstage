@@ -1,4 +1,4 @@
-const log4js = require("./utils/log4j");
+const log4js = require("./log4j");
 
 //状态码
 const Code = {
@@ -36,8 +36,8 @@ function success(data = "", msg = "", code = Code.SUCCESS) {
     code,
   };
 }
-function fail(msg = "", code = Code.BUSINESS_ERROR) {
-  log4js.debug(data);
+function fail(msg = "", code = Code.BUSINESS_ERROR, data = "") {
+  log4js.debug(msg);
   return {
     code,
     data,
@@ -47,4 +47,7 @@ function fail(msg = "", code = Code.BUSINESS_ERROR) {
 
 module.exports = {
   pager,
+  success,
+  fail,
+  Code,
 };
