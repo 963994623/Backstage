@@ -7,6 +7,7 @@ const bodyparser = require("koa-bodyparser");
 const logger = require("koa-logger");
 const log4js = require("./utils/log4j.js");
 const users = require("./routes/users");
+const menus = require("./routes/menus");
 const router = require("koa-router")();
 const jwt = require("jsonwebtoken")
 const koajwt = require('koa-jwt');
@@ -57,12 +58,13 @@ app.use(koajwt({ secret: 'duxi' }).unless({
 // routes
 router.prefix("/api");
 
-router.get('/leave/count', (ctx) => {
-  const token = ctx.request.header.authorization.split(' ')[1];
-  const payload = jwt.verify(token, 'duxi')
-  ctx.body = payload
-})
+// router.get('/leave/count', (ctx) => {
+//   const token = ctx.request.header.authorization.split(' ')[1];
+//   const payload = jwt.verify(token, 'duxi')
+//   ctx.body = payload
+// })
 router.use(users.routes(), users.allowedMethods());
+router.use(menus.routes(), menus.allowedMethods());
 app.use(router.routes(), router.allowedMethods());
 
 

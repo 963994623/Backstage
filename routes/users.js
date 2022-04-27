@@ -1,6 +1,9 @@
 const router = require("koa-router")();
 const utils = require("../utils/utils");
 const jwt = require('jsonwebtoken');
+const counter = require("../models/counterSchema");
+const md5 = require("md5");
+
 
 
 /**
@@ -35,7 +38,6 @@ router.post("/login", async (ctx) => {
     }
   } catch (error) {
     ctx.body = utils.fail(error.msg);
-    console.log(error);
   }
 });
 /**
@@ -67,5 +69,66 @@ router.get('/list', async (ctx) => {
 /**
  * 用户删除 批量删除
  */
+router.post("/delete", async (ctx) => {
+  const { userIds } = ctx.request.body;
+  // User.updateMany({ $or: [{ userId: 10002 }, { userId: 10003 }] })
+  const res = await User.updateMany({ userId: { $in: userIds } }, { state: 2 });
+  if (res.modifiedCount) {
+    ctx.body = utils.success(res, `共删除${res.modifiedCount}条`)
+    return;
+  }
+  ctx.body = utils.fail('删除失败');
+})
+
+/**
+ * 用户新增/编辑
+ */
+router.post('/operate', async (ctx) => {
+  const { userId, userName, userEmail, job, state, roleList, mobile, deptId, action } = ctx.request.body;
+  if (action == 'add') {
+    if (!userName || !userEmail || !deptId) {
+      ctx.body = utils.fail("参数错误", utils.Code.PARAM_ERROR)
+      return;
+    }
+    const doc = await counter.findOneAndUpdate({ _id: 'userId' }, { $inc: { sequence_value: 1 } }, { new: true })
+    const res = await User.findOne({ $or: [{ userName }, { userEmail }] }, "_id userName,userEmail")
+    if (res) {
+      ctx.body = utils.fail(`系统检测有重复的用户,信息如下=> ${userName} = ${userEmail}`)
+    } else {
+      try {
+        const user = new User({
+          userId: doc.sequence_value,
+          userName,
+          userEmail,
+          userPwd: md5("123456"),
+          role: 1,//默认普通用哪个户,
+          roleList,
+          job,
+          state,
+          deptId,
+          mobile
+        })
+        user.save();
+        ctx.body = utils.success({}, "用户创建成功")
+      } catch (err) {
+        ctx.body = utils.fail("用户创建失败")
+      }
+    }
+  } else {
+    if (!deptId) {
+      ctx.body = utils.fail("部门不能为空", utils.Code.PARAM_ERROR)
+      return;
+    }
+    try {
+      const res = await User.findOneAndUpdate({ userId }, { mobile, job, state, roleList, deptId })
+      ctx.body = utils.success({}, "更新成功")
+    } catch (err) {
+      ctx.body = utils.fail('更新失败', res)
+    }
+  }
+})
+
+
+
 
 module.exports = router;
