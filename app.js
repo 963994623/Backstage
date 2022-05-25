@@ -1,5 +1,6 @@
 const Koa = require("koa");
 const app = new Koa();
+const cors = require("koa2-cors")
 const views = require("koa-views");
 const json = require("koa-json");
 const onerror = require("koa-onerror");
@@ -16,11 +17,25 @@ const jwt = require("jsonwebtoken")
 const koajwt = require('koa-jwt');
 const utils = require("./utils/utils");
 
+
 // error handler
 onerror(app);
 
 //链接数据库
 require("./config/db");
+
+
+
+app.use(
+  cors({
+    Orgin: ["http://localhost:3000"],
+    credentials: true,
+    allowMethods: ["GET", "POST", "DELETE", "PUT", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "Accept"]
+  })
+)
+
+
 
 // middlewares
 app.use(
@@ -56,7 +71,7 @@ app.use(async (ctx, next) => {
 
 // koa - jwt
 app.use(koajwt({ secret: 'duxi' }).unless({
-  path: [/^\/api\/users\/login/]
+  path: [/^\/api\/users\/login/, /^\/api\/users\/test/]
 }))
 
 // routes

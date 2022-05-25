@@ -170,6 +170,11 @@ async function getMenuList(userRole, roleKeys) {
   return utils.getTreeMenu(rootList, undefined, [])
 }
 
+//测试接口
+router.get("/test", ctx => {
+  ctx.body = utils.success("Chenggong ")
+})
+
 function getActionList(list) {
   const actionList = [];
   const deep = (arr) => {
