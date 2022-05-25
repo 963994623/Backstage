@@ -1,6 +1,8 @@
 const router = require("koa-router")();
 const utils = require("../utils/utils");
 const Menu = require("../models/menuSchema");
+const log4js = require("../utils/log4j");
+const jwt = require("jsonwebtoken");
 
 
 router.prefix("/menu");
@@ -16,36 +18,33 @@ router.get("/list", async (ctx) => {
     if (menuState) params.menuState = menuState;
     const result = await Menu.find(params);
 
-    const permissionList = getTreeMenu(result, undefined, [])
+    const permissionList = utils.getTreeMenu(result, undefined, [])
     ctx.body = utils.success(permissionList, "查看成功");
 
 })
 
-// 树形递归
-function getTreeMenu(res, id, list) {
-    for (let i = 0; i < res.length; i++) {
-        let item = res[i];
-        // console.log("++++++++++++++++" + String(item.parentId.slice().pop()) + "+++++++++");
-        // console.log(String(item.parentId.slice().pop()) === String(id));
+// 进行抽离 到utils
+// // 树形递归
+// function getTreeMenu(res, id, list) {
+//     for (let i = 0; i < res.length; i++) {
+//         let item = res[i];
 
-        if (String(item.parentId.slice().pop()) == String(id)) {
+//         if (String(item.parentId.slice().pop()) == String(id)) {
 
-            list.push(item._doc)
-        }
-    }
-    console.log(list);
-    list.map(item => {
-        // console.log(item + "++++++++++++++");
-        item.children = [];
-        getTreeMenu(res, item._id, item.children)
-        if (item.children.length == 0) {
-            delete item.children;
-        } else if (item.children.length > 0 && item.children[0].menuType == 2) {
-            item.action = item.children;
-        }
-    })
-    return list
-}
+//             list.push(item._doc)
+//         }
+//     }
+//     list.map(item => {
+//         item.children = [];
+//         getTreeMenu(res, item._id, item.children)
+//         if (item.children.length == 0) {
+//             delete item.children;
+//         } else if (item.children.length > 0 && item.children[0].menuType == 2) {
+//             item.action = item.children;
+//         }
+//     })
+//     return list
+// }
 
 //增删改menu
 router.post("/operate", async (ctx) => {
@@ -70,5 +69,6 @@ router.post("/operate", async (ctx) => {
         ctx.body = utils.fail("创建/编辑/删除  失败")
     }
 })
+
 
 module.exports = router;

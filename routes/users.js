@@ -10,6 +10,8 @@ const md5 = require("md5");
  * 引入模型
  */
 const User = require("../models/userSchema");
+const Menu = require("../models/menuSchema")
+const Role = require("../models/roleSchema");
 router.prefix("/users");
 /**
  * 用户管理模块
@@ -63,6 +65,16 @@ router.get('/list', async (ctx) => {
     })
   } catch (err) {
     ctx.body.utils.fail("查询异常")
+  }
+})
+
+// 全量用户列表
+router.get('/all/list', async (ctx) => {
+  try {
+    const list = await User.find({}, "userId userName userEmail")
+    ctx.body = utils.success(list)
+  } catch (error) {
+    ctx.body = utils.fail(error)
   }
 })
 
@@ -129,6 +141,54 @@ router.post('/operate', async (ctx) => {
 })
 
 
+//获取用户对应的权限菜单
+router.get("/getPermissionList", async ctx => {
+  let authorization = ctx.request.headers.authorization;
+  let { data } = utils.decoded(authorization)
+  let MenuList = await getMenuList(data.role, data.roleList)
+  let actionList = getActionList(JSON.parse(JSON.stringify(MenuList)))
+  ctx.body = utils.success({ MenuList, actionList })
+})
+
+async function getMenuList(userRole, roleKeys) {
+  console.log(userRole);
+  let rootList = [];
+  if (userRole == 0) {
+    rootList = await Menu.find({}) || [];
+  } else {
+    //根据用户拥有的角色数组 获取权限列表
+    //先查找用户对应的角色有哪些
+    let roleList = await Role.find({ _id: { $in: roleKeys } });
+    let permissionList = []
+    roleList.map((role) => {
+      let { checkedKeys, halfCheckedKeys } = role.permissionList;
+      permissionList = permissionList.concat([...checkedKeys, ...halfCheckedKeys])
+    })
+    permissionList = [...new Set(permissionList)]
+    rootList = await Menu.find({ _id: { $in: permissionList } }) || [];
+  }
+  return utils.getTreeMenu(rootList, undefined, [])
+}
+
+function getActionList(list) {
+  const actionList = [];
+  const deep = (arr) => {
+    while (arr.length) {
+      let item = arr.pop();
+      if (item.action) {
+        item.action.map(item => {
+          actionList.push(item.menuCode)
+        })
+      }
+      if (item.children && !item.action) {
+        deep(item.children)
+      }
+    }
+  }
 
 
+
+  deep(list)
+  return actionList
+}
 module.exports = router;

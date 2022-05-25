@@ -8,6 +8,9 @@ const logger = require("koa-logger");
 const log4js = require("./utils/log4j.js");
 const users = require("./routes/users");
 const menus = require("./routes/menus");
+const roles = require("./routes/roles");
+const depts = require("./routes/depts");
+const leaves = require("./routes/leaves");
 const router = require("koa-router")();
 const jwt = require("jsonwebtoken")
 const koajwt = require('koa-jwt');
@@ -39,7 +42,7 @@ app.use(
 
 // logger
 app.use(async (ctx, next) => {
-  log4js.info("params:" + JSON.stringify(ctx.request.body || ctx.request.query));
+  // log4js.info("params:" + JSON.stringify(ctx.request.body || ctx.request.query));
   await next().catch((err) => {
     if (err.status == '401') {
       ctx.status = 200;
@@ -48,9 +51,10 @@ app.use(async (ctx, next) => {
       throw err
     }
   })
+
 });
 
-//koa-jwt
+// koa - jwt
 app.use(koajwt({ secret: 'duxi' }).unless({
   path: [/^\/api\/users\/login/]
 }))
@@ -65,6 +69,9 @@ router.prefix("/api");
 // })
 router.use(users.routes(), users.allowedMethods());
 router.use(menus.routes(), menus.allowedMethods());
+router.use(roles.routes(), roles.allowedMethods());
+router.use(depts.routes(), depts.allowedMethods());
+router.use(leaves.routes(), leaves.allowedMethods());
 app.use(router.routes(), router.allowedMethods());
 
 
